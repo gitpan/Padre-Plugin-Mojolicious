@@ -4,7 +4,7 @@ use Cwd            ();
 use File::Spec     ();
 use File::Basename ();
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 # get the Mojolicious project name, so we can
 # figure out the development server's name

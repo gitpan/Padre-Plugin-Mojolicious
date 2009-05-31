@@ -6,7 +6,7 @@ use strict;
 
 use Padre::Util   ('_T');
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 # The plugin name to show in the Plugin Manager and menus
 sub plugin_name { 'Mojolicious' }
@@ -52,11 +52,15 @@ sub menu_plugins_simple {
             '---'     => undef, # ...and another separator
             _T('Mojolicious Online References') => [
 				_T('Mojolicious Manual') => sub {
-					Wx::LaunchDefaultBrowser('http://search.cpan.org/perldoc?Mojo::Manual::Mojolicious');
+					Padre::Wx::launch_browser('http://search.cpan.org/perldoc?Mojo::Manual::Mojolicious');
 				},
 				_T('Mojolicious Website') => sub {
-					Wx::LaunchDefaultBrowser('http://www.mojolicious.org/');
+					Padre::Wx::launch_browser('http://www.mojolicious.org/');
 				},
+				_T('Mojolicious Community Live Support') => sub {
+					Padre::Wx::launch_irc( 'irc.perl.org' => 'mojo' );
+				},
+
             ],
             '---'         => undef, # ...oh
             _T('About')   => sub { $self->on_show_about },
@@ -106,7 +110,7 @@ sub on_start_server {
 		$main,
 	);
 	if ( $ret == Wx::wxYES ) {
-        Wx::LaunchDefaultBrowser('http://localhost:3000');
+		Padre::Wx::launch_browser('http://localhost:3000');
     }
     
     #TODO: handle menu greying
@@ -160,7 +164,7 @@ Padre::Plugin::Mojolicious - Simple Mojolicious helper interface for Padre
 
 =head1 VERSION
 
-Version 0.01
+Version 0.03
 
 =head1 SYNOPSIS
 

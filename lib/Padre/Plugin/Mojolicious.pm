@@ -1,174 +1,186 @@
 package Padre::Plugin::Mojolicious;
-use base 'Padre::Plugin';
-
-use warnings;
-use strict;
-
-use Padre::Util   ('_T');
-
-our $VERSION = '0.03';
-
-# The plugin name to show in the Plugin Manager and menus
-sub plugin_name { 'Mojolicious' }
-  
-# Declare the Padre interfaces this plugin uses
-sub padre_interfaces {
-    'Padre::Plugin'         => 0.29,
-#    'Padre::Document::Perl' => 0.16,
-#    'Padre::Wx::Main'       => 0.16,
-#    'Padre::DB'             => 0.16,
+BEGIN {
+  $Padre::Plugin::Mojolicious::VERSION = '0.04';
 }
 
-sub plugin_icon {
-	my $icon = [
-		'16 16 27 1'   , ' 	c None'    , '.	c #4082AE' , '+	c #3F81AC' , '@	c #3D7EA9' ,
-	    '#	c #3C7DA8' , '$	c #37759D' , '%	c #255A7B' , '&	c #25587A' , '*	c #3F81AD' ,
-		'=	c #3977A0' , '-	c #275C7E' , ';	c #245879' , '>	c #235576' , ',	c #3E7FAA' ,
-		'\'	c #235677' , ')	c #225474' , '!	c #3F80AC' , '~	c #245779' , '{	c #3B7AA5' ,
-		']	c #36729A' , '^	c #36739C' , '/	c #306A8F' , '(	c #306A90' , '_	c #2B6285' ,
-		':	c #2B6185' , '<	c #265A7B' , '[	c #25597B' , '                ' , '                ',
-		'                ', '                ' , '  .. ...  ...   ', '  ..+...@#...+  ',
-		'  ..$%&*.=-;**> ', '  .,\') .!~) .{) ', '  .])  .^)  .]) ', ' ../) ..() ../) ',
-		' .._  ..:  ..:  ', ' ..<  ..[  ..[  ' , '  ))   ))   ))  ', '                ',
-		'                ', '                ',
-	];
+# ABSTRACT: Simple Mojolicious helper interface for Padre
 
-	return Wx::Bitmap->newFromXPM( $icon );
+use 5.008;
+use strict;
+use warnings;
+
+use Padre::Plugin ();
+
+our @ISA = 'Padre::Plugin';
+
+######################################################################
+# Padre Integration
+
+sub padre_interfaces {
+	'Padre::Plugin' => 0.64,;
+}
+
+
+######################################################################
+# Padre::Plugin Methods
+
+sub plugin_name {
+	Wx::gettext('Mojolicious');
+}
+
+sub plugin_disable {
+	require Class::Unload;
+	Class::Unload->unload('Padre::Plugin::Mojolicious::NewApp');
+	Class::Unload->unload('Padre::Plugin::Mojolicious::Util');
+	Class::Unload->unload('Mojolicious');
 }
 
 # The command structure to show in the Plugins menu
 sub menu_plugins_simple {
-    my $self = shift;
-    
-    return $self->plugin_name  => [
-            _T('New Mojolicious Application') => sub { 
-                                require Padre::Plugin::Mojolicious::NewApp;
-                                Padre::Plugin::Mojolicious::NewApp::on_newapp();
-                                return;
-                            },
-			'---'     => undef, # separator
-            _T('Start Web Server') => sub { $self->on_start_server },
-            _T('Stop Web Server')  => sub { $self->on_stop_server  },
-            '---'     => undef, # ...and another separator
-            _T('Mojolicious Online References') => [
-				_T('Mojolicious Manual') => sub {
-					Padre::Wx::launch_browser('http://search.cpan.org/perldoc?Mojo::Manual::Mojolicious');
-				},
-				_T('Mojolicious Website') => sub {
-					Padre::Wx::launch_browser('http://www.mojolicious.org/');
-				},
-				_T('Mojolicious Community Live Support') => sub {
-					Padre::Wx::launch_irc( 'irc.perl.org' => 'mojo' );
-				},
+	my $self = shift;
+	return $self->plugin_name => [
+		Wx::gettext('New Mojolicious Application') => sub {
+			require Padre::Plugin::Mojolicious::NewApp;
+			Padre::Plugin::Mojolicious::NewApp::on_newapp($self);
+			return;
+		},
 
-            ],
-            '---'         => undef, # ...oh
-            _T('About')   => sub { $self->on_show_about },
-    ];
+		'---' => undef,
+
+		Wx::gettext('Start Web Server') => sub {
+			$self->on_start_server;
+		},
+
+		Wx::gettext('Stop Web Server') => sub {
+			$self->on_stop_server;
+		},
+
+		'---' => undef,
+
+		Wx::gettext('Mojolicious Online References') => [
+			Wx::gettext('Mojolicious Manual') => sub {
+				Padre::Wx::launch_browser('http://search.cpan.org/perldoc?Mojo::Manual::Mojolicious');
+			},
+			Wx::gettext('Mojolicious Website') => sub {
+				Padre::Wx::launch_browser('http://www.mojolicious.org/');
+			},
+			Wx::gettext('Mojolicious Community Live Support') => sub {
+				Padre::Wx::launch_irc( 'irc.perl.org' => 'mojo' );
+			},
+
+		],
+
+		'---' => undef,
+
+		Wx::gettext('About') => sub {
+			$self->on_show_about;
+		},
+	];
 }
 
-
 sub on_start_server {
-    my $main = Padre->ide->wx->main;
+	my $self = shift;
+	my $main = $self->main;
 
-    require Padre::Plugin::Mojolicious::Util;
-    my $project_dir = Padre::Plugin::Mojolicious::Util::get_document_base_dir();
+	require Padre::Plugin::Mojolicious::Util;
+	my $project_dir = Padre::Plugin::Mojolicious::Util::get_document_base_dir();
 
-    my $server_filename = Padre::Plugin::Mojolicious::Util::get_mojolicious_project_name($project_dir);
+	my $server_filename = Padre::Plugin::Mojolicious::Util::get_mojolicious_project_name($project_dir);
 
-    my $server_full_path = File::Spec->catfile($project_dir, 'bin', $server_filename );
-    if(! -e $server_full_path) {
-        Wx::MessageBox(
-            sprintf(_T("Mojolicious application script not found at\n%s\n\nPlease make sure the active document is from your Mojolicious project."), 
-                    $server_full_path
-                   ),
-            _T('Server not found'), Wx::wxOK, $main
-        );
-        return;
-    }
-    
-    # go to the selected file's directory
-    # (Mojolicious instructs us to always run their scripts
-    #  from the basedir)
+	my $server_full_path = File::Spec->catfile( $project_dir, 'script', $server_filename );
+	unless ( -e $server_full_path ) {
+		Wx::MessageBox(
+			sprintf(
+				Wx::gettext(
+					"Mojolicious application script not found at\n%s\n\nPlease make sure the active document is from your Mojolicious project."
+				),
+				$server_full_path
+			),
+			Wx::gettext('Server not found'),
+			Wx::wxOK, $main
+		);
+		return;
+	}
+
+	# Go to the selected file's directory
+	# (Mojolicious instructs us to always run their scripts
+	#  from the basedir)
 	my $pwd = Cwd::cwd();
 	chdir $project_dir;
 
-    my $perl = Padre->perl_interpreter;
-    my $command = "$perl " . File::Spec->catfile('bin', $server_filename) 
-                           . ' daemon';
-                           
-    $main->run_command($command);
-    
-    # restore current dir
-    chdir $pwd;
-    
-    # TODO: actually check whether this is true.
-    my $ret = Wx::MessageBox(
-		_T('Web server appears to be running. Launch web browser now?'),
-		_T('Start Web Browser?'),
-		Wx::wxYES_NO|Wx::wxCENTRE,
+	require Padre::Perl;
+	my $command = Padre::Perl->cperl . ' ' . File::Spec->catfile( 'script', $server_filename ) . ' daemon';
+
+	$main->run_command($command);
+
+	# restore current dir
+	chdir $pwd;
+
+	# TODO: actually check whether this is true.
+	my $ret = Wx::MessageBox(
+		Wx::gettext('Web server appears to be running. Launch web browser now?'),
+		Wx::gettext('Start Web Browser?'),
+		Wx::wxYES_NO | Wx::wxCENTRE,
 		$main,
 	);
 	if ( $ret == Wx::wxYES ) {
 		Padre::Wx::launch_browser('http://localhost:3000');
-    }
-    
-    #TODO: handle menu greying
-    
-    return;
+	}
+
+	# TODO: handle menu greying
+
+	return;
 }
 
 sub on_stop_server {
+	my $self = shift;
+	my $main = $self->main;
+
 	# TODO: Make this actually call
 	# Run -> Stop
-	my $main = Padre->ide->wx->main;
 	if ( $main->{command} ) {
 		my $processid = $main->{command}->GetProcessId();
-		kill(9, $processid);
-		#$main->{command}->TerminateProcess;
+		kill( 9, $processid );
+
+		# $main->{command}->TerminateProcess;
 	}
 	delete $main->{command};
 	$main->menu->run->enable;
-	$main->output->AppendText(_T("\nWeb server stopped successfully.\n"));
+	$main->output->AppendText( Wx::gettext("\nWeb server stopped successfully.\n") );
 	return;
 }
 
 sub on_show_about {
-	require Mojo;
+	require Mojolicious;
 	require Class::Unload;
 	my $about = Wx::AboutDialogInfo->new;
 	$about->SetName("Padre::Plugin::Mojolicious");
-	$about->SetDescription(
-		  "Initial Mojolicious support for Padre\n\n"
-		. "This system is running Mojolicious version " . $Mojo::VERSION . "\n"
-	);
-	$about->SetVersion( $VERSION );
-	Class::Unload->unload('Mojo');
-
-	Wx::AboutBox( $about );
+	$about->SetDescription( "Initial Mojolicious support for Padre\n\n"
+			. "This system is running Mojolicious version "
+			. $Mojolicious::VERSION
+			. "\n" );
+	$about->SetVersion($Padre::Plugin::Mojolicious::VERSION);
+	Class::Unload->unload('Mojolicious');
+	Wx::AboutBox($about);
 	return;
 }
 
-sub plugin_disable {
-    require Class::Unload;
-    Class::Unload->unload('Padre::Plugin::Mojolicious::NewApp');
-    Class::Unload->unload('Padre::Plugin::Mojolicious::Util');
-    Class::Unload->unload('Mojo');
-}
 
-42;
-__END__
+1;
+
+
+
+=pod
+
 =head1 NAME
 
 Padre::Plugin::Mojolicious - Simple Mojolicious helper interface for Padre
 
 =head1 VERSION
 
-Version 0.03
+version 0.04
 
 =head1 SYNOPSIS
-
-B<WARNING: CODE IN PROGRESS>
 
 	cpan install Padre::Plugin::Mojolicious;
 
@@ -200,24 +212,17 @@ This menu option contains a series of external reference links on Mojolicious. C
 
 Shows a nice about box with this module's name and version.
 
-
-=head1 AUTHOR
-
-Breno G. de Oliveira, C<< <garu at cpan.org> >>
-
 =head1 BUGS
 
 Please report any bugs or feature requests to C<bug-padre-plugin-mojolicious at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Padre-Plugin-Mojolicious>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
-
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Padre::Plugin::Mojolicious
-
+	perldoc Padre::Plugin::Mojolicious
 
 You can also look for information at:
 
@@ -241,16 +246,33 @@ L<http://search.cpan.org/dist/Padre-Plugin-Mojolicious/>
 
 =back
 
-
 =head1 SEE ALSO
 
 L<Mojolicious>, L<Padre>
 
+=head1 AUTHORS
 
-=head1 COPYRIGHT & LICENSE
+=over 4
 
-Copyright 2008-2009 The Padre development team as listed in Padre.pm.
-all rights reserved.
+=item *
 
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
+Breno G. de Oliveira <garu@cpan.org>
+
+=item *
+
+Ahmad M. Zawawi <ahmad.zawawi@gmail.com>
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2010 by Breno G. de Oliveira.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
+
+__END__
+

@@ -1,9 +1,19 @@
 #!perl
 
-use Test::More tests => 1;
+use strict;
+use warnings;
+
+use Test::More;
 
 BEGIN {
-	use_ok( 'Padre::Plugin::Mojolicious' );
+	if( not $ENV{DISPLAY} and not $^O eq 'MSWin32' ) {
+		plan skip_all => 'Needs DISPLAY';
+		exit 0;
+	}
 }
 
-diag( "Testing Padre::Plugin::Mojolicious $Padre::Plugin::Mojolicious::VERSION, Perl $], $^X" );
+
+plan tests => 1;
+
+use_ok('Padre::Plugin::Mojolicious');
+diag("Testing Padre::Plugin::Mojolicious $Padre::Plugin::Mojolicious::VERSION, Perl $], $^X");

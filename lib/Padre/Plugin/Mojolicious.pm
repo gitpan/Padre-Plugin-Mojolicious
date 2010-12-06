@@ -1,6 +1,6 @@
 package Padre::Plugin::Mojolicious;
 BEGIN {
-  $Padre::Plugin::Mojolicious::VERSION = '0.04';
+  $Padre::Plugin::Mojolicious::VERSION = '0.05';
 }
 
 # ABSTRACT: Simple Mojolicious helper interface for Padre
@@ -178,7 +178,7 @@ Padre::Plugin::Mojolicious - Simple Mojolicious helper interface for Padre
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 SYNOPSIS
 

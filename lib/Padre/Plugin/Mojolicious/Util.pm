@@ -1,6 +1,6 @@
 package Padre::Plugin::Mojolicious::Util;
 BEGIN {
-  $Padre::Plugin::Mojolicious::Util::VERSION = '0.04';
+  $Padre::Plugin::Mojolicious::Util::VERSION = '0.05';
 }
 
 # ABSTRACT: Some code used all around the Plugin
@@ -85,7 +85,7 @@ Padre::Plugin::Mojolicious::Util - Some code used all around the Plugin
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 AUTHORS
 

@@ -1,6 +1,6 @@
 package Padre::Plugin::Mojolicious::NewApp;
 BEGIN {
-  $Padre::Plugin::Mojolicious::NewApp::VERSION = '0.04';
+  $Padre::Plugin::Mojolicious::NewApp::VERSION = '0.05';
 }
 
 # ABSTRACT: A New Mojolicious Application for Padre
@@ -154,7 +154,7 @@ Padre::Plugin::Mojolicious::NewApp - A New Mojolicious Application for Padre
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 AUTHORS
 

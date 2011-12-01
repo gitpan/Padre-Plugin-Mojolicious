@@ -1,7 +1,4 @@
 package Padre::Plugin::Mojolicious::Util;
-BEGIN {
-  $Padre::Plugin::Mojolicious::Util::VERSION = '0.05';
-}
 
 # ABSTRACT: Some code used all around the Plugin
 
@@ -11,6 +8,8 @@ use warnings;
 use Cwd            ();
 use File::Spec     ();
 use File::Basename ();
+
+our $VERSION = '0.06';
 
 # get the Mojolicious project name, so we can
 # figure out the development server's name
@@ -75,38 +74,3 @@ sub get_document_base_dir {
 }
 
 1;
-
-__END__
-=pod
-
-=head1 NAME
-
-Padre::Plugin::Mojolicious::Util - Some code used all around the Plugin
-
-=head1 VERSION
-
-version 0.05
-
-=head1 AUTHORS
-
-=over 4
-
-=item *
-
-Breno G. de Oliveira <garu@cpan.org>
-
-=item *
-
-Ahmad M. Zawawi <ahmad.zawawi@gmail.com>
-
-=back
-
-=head1 COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2010 by Breno G. de Oliveira.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
-
-=cut
-

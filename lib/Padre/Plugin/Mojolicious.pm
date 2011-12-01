@@ -1,13 +1,10 @@
 package Padre::Plugin::Mojolicious;
-BEGIN {
-  $Padre::Plugin::Mojolicious::VERSION = '0.05';
-}
-
-# ABSTRACT: Simple Mojolicious helper interface for Padre
 
 use 5.008;
 use strict;
 use warnings;
+
+our $VERSION = '0.06';
 
 use Padre::Plugin ();
 
@@ -17,7 +14,7 @@ our @ISA = 'Padre::Plugin';
 # Padre Integration
 
 sub padre_interfaces {
-	'Padre::Plugin' => 0.64,;
+	'Padre::Plugin' => 0.92,;
 }
 
 
@@ -29,10 +26,10 @@ sub plugin_name {
 }
 
 sub plugin_disable {
-	require Class::Unload;
-	Class::Unload->unload('Padre::Plugin::Mojolicious::NewApp');
-	Class::Unload->unload('Padre::Plugin::Mojolicious::Util');
-	Class::Unload->unload('Mojolicious');
+	require Padre::Unload;
+	Padre::Unload->unload('Padre::Plugin::Mojolicious::NewApp');
+	Padre::Unload->unload('Padre::Plugin::Mojolicious::Util');
+	Padre::Unload->unload('Mojolicious');
 }
 
 # The command structure to show in the Plugins menu
@@ -41,7 +38,7 @@ sub menu_plugins_simple {
 	return $self->plugin_name => [
 		Wx::gettext('New Mojolicious Application') => sub {
 			require Padre::Plugin::Mojolicious::NewApp;
-			Padre::Plugin::Mojolicious::NewApp::on_newapp($self);
+			Padre::Plugin::Mojolicious::NewApp->new( $self->main )->run;
 			return;
 		},
 
@@ -59,7 +56,7 @@ sub menu_plugins_simple {
 
 		Wx::gettext('Mojolicious Online References') => [
 			Wx::gettext('Mojolicious Manual') => sub {
-				Padre::Wx::launch_browser('http://search.cpan.org/perldoc?Mojo::Manual::Mojolicious');
+				Padre::Wx::launch_browser('http://mojolicio.us/perldoc');
 			},
 			Wx::gettext('Mojolicious Website') => sub {
 				Padre::Wx::launch_browser('http://www.mojolicious.org/');
@@ -146,21 +143,20 @@ sub on_stop_server {
 	}
 	delete $main->{command};
 	$main->menu->run->enable;
-	$main->output->AppendText( Wx::gettext("\nWeb server stopped successfully.\n") );
+	$main->output->AppendText( "\n" . Wx::gettext('Web server stopped successfully.') . "\n" );
 	return;
 }
 
 sub on_show_about {
 	require Mojolicious;
-	require Class::Unload;
+	require Padre::Unload;
 	my $about = Wx::AboutDialogInfo->new;
-	$about->SetName("Padre::Plugin::Mojolicious");
-	$about->SetDescription( "Initial Mojolicious support for Padre\n\n"
-			. "This system is running Mojolicious version "
-			. $Mojolicious::VERSION
+	$about->SetName('Padre::Plugin::Mojolicious');
+	$about->SetDescription( Wx::gettext('Mojolicious support for Padre') . "\n\n"
+			. sprintf( Wx::gettext('This system is running Mojolicious version %s'), $Mojolicious::VERSION )
 			. "\n" );
 	$about->SetVersion($Padre::Plugin::Mojolicious::VERSION);
-	Class::Unload->unload('Mojolicious');
+	Padre::Unload->unload('Mojolicious');
 	Wx::AboutBox($about);
 	return;
 }
@@ -168,21 +164,17 @@ sub on_show_about {
 
 1;
 
-
+__END__
 
 =pod
 
 =head1 NAME
 
-Padre::Plugin::Mojolicious - Simple Mojolicious helper interface for Padre
-
-=head1 VERSION
-
-version 0.05
+Padre::Plugin::Mojolicious - Mojolicious support for Padre
 
 =head1 SYNOPSIS
 
-	cpan install Padre::Plugin::Mojolicious;
+	cpan Padre::Plugin::Mojolicious;
 
 Then use it via L<Padre>, The Perl IDE.
 
@@ -194,21 +186,21 @@ Once you enable this Plugin under Padre, you'll get a brand new menu with the fo
 
 This options lets you create a new Mojolicious application.
 
-=head2 'Start Web Server'
+=head2 Start Web Server
 
 This option will automatically spawn your application's development web server. Once it's started, it will ask to open your default web browser to view your application running.
 
 Note that this works like Padre's "run" menu option, so any other execution it will be disabled while your server is running.
 
-=head2 'Stop Web Server'
+=head2 Stop Web Server
 
 This option will stop the development web server for you.
 
-=head2 'Mojolicious Online References'
+=head2 Mojolicious Online References
 
 This menu option contains a series of external reference links on Mojolicious. Clicking on each of them will point your default web browser to their websites.
 
-=head2 'About'
+=head2 About
 
 Shows a nice about box with this module's name and version.
 
@@ -218,11 +210,13 @@ Please report any bugs or feature requests to C<bug-padre-plugin-mojolicious at 
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Padre-Plugin-Mojolicious>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
+
 =head1 SUPPORT
 
 You can find documentation for this module with the perldoc command.
 
 	perldoc Padre::Plugin::Mojolicious
+
 
 You can also look for information at:
 
@@ -273,6 +267,4 @@ the same terms as the Perl 5 programming language system itself.
 
 =cut
 
-
 __END__
-

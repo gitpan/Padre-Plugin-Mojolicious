@@ -1,101 +1,55 @@
 package Padre::Plugin::Mojolicious::NewApp;
-BEGIN {
-  $Padre::Plugin::Mojolicious::NewApp::VERSION = '0.05';
-}
 
 # ABSTRACT: A New Mojolicious Application for Padre
 
 use 5.008;
 use strict;
 use warnings;
-use Cwd               ();
-use File::Spec        ();
-use Padre::Wx         ();
-use Padre::Wx::Dialog ();
-use Padre::DB         ();
+use Cwd                                     ();
+use File::Spec                              ();
+use Padre::Wx                               ();
+use Padre::Plugin::Mojolicious::FBP::NewApp ();
+use Padre::DB                               ();
 
-sub on_newapp {
-	my $plugin = shift;
-	my $main   = $plugin->main;
-	my $dialog = dialog($main);
-	$dialog->Show(1);
+our $VERSION = '0.06';
+
+our @ISA = qw{
+	Padre::Plugin::Mojolicious::FBP::NewApp
+};
+
+sub run {
+	my $self = shift;
+
+	$self->{ok_button}->SetDefault;
+	$self->{app_name}->SetFocus;
+	$self->Show(1);
+}
+
+sub on_cancel_clicked {
+	my $self = shift;
+	$self->Destroy;
 	return;
 }
 
-sub get_layout {
+sub on_ok_clicked {
+	my ( $self, $event ) = @_;
+	$self->Destroy;
 
-	my @layout = (
-		[   [ 'Wx::StaticText', undef,        Wx::gettext('Application Name:') ],
-			[ 'Wx::TextCtrl',   '_app_name_', '' ],
-		],
-		[   [ 'Wx::StaticText', undef, Wx::gettext('Parent Directory:') ],
-			[ 'Wx::DirPickerCtrl', '_directory_', '', Wx::gettext('Pick parent directory') ],
-		],
-		[   [ 'Wx::Button', '_ok_',     Wx::wxID_OK ],
-			[ 'Wx::Button', '_cancel_', Wx::wxID_CANCEL ],
-		],
-	);
-	return \@layout;
-}
-
-sub dialog {
-	my $parent = shift;
-	my $config = $parent->current->config;
-	my $layout = get_layout();
-	my $dialog = Padre::Wx::Dialog->new(
-		parent => $parent,
-		title  => Wx::gettext('New Mojolicious Application'),
-		layout => $layout,
-		width  => [ 100, 200 ],
-		bottom => 20,
-	);
-
-	$dialog->{_widgets_}->{_directory_}->SetPath( $config->module_start_directory );
-
-	$dialog->{_widgets_}->{_ok_}->SetDefault;
-	Wx::Event::EVT_BUTTON( $dialog, $dialog->{_widgets_}->{_ok_}, \&ok_clicked );
-
-	Wx::Event::EVT_BUTTON( $dialog, $dialog->{_widgets_}->{_cancel_}, \&cancel_clicked );
-
-	$dialog->{_widgets_}->{_app_name_}->SetFocus;
-
-	return $dialog;
-}
-
-
-sub cancel_clicked {
-	my $dialog = shift;
-	$dialog->Destroy;
-	return;
-}
-
-sub ok_clicked {
-	my $dialog = shift;
-	my $event  = shift;
-	my $data   = $dialog->get_data;
-	$dialog->Destroy;
-
-	my $main = $dialog->GetParent->current->main;
+	my $main      = $self->main;
+	my $app_name  = $self->{app_name}->GetValue;
+	my $directory = $self->{directory}->GetPath;
 
 	# TODO improve input validation !
-	if ( $data->{'_app_name_'} =~ m{^\s*$|[^\w\:]}o ) {
+	if ( $app_name =~ m{^\s*$|[^\w\:]}o ) {
 		Wx::MessageBox( Wx::gettext('Invalid Application name'), Wx::gettext('missing field'), Wx::wxOK, $main );
 		return;
-	} elsif ( not $data->{'_directory_'} ) {
+	} elsif ( not $directory ) {
 		Wx::MessageBox(
 			Wx::gettext('You need to select a base directory'), Wx::gettext('missing field'), Wx::wxOK,
 			$main
 		);
 		return;
 	}
-
-	# We should probably call Mojolicious::Helper directly
-	# (new() and mk_app()) here, as long as we can redirect
-	# print statements to $main->output->AppendText().
-	#
-	# Perhaps if run_command() were to block before continuing,
-	# we could use something like:
-	#$main->run_command('mojolicious generate app' . $data->{'_app_name_'});
 
 	# Prepare the output window for the output
 	$main->show_output(1);
@@ -105,12 +59,12 @@ sub ok_clicked {
 		'mojo',
 		'generate',
 		'app',
-		$data->{'_app_name_'},
+		$app_name,
 	);
 
 	# go to the selected directory
 	my $pwd = Cwd::cwd();
-	chdir $data->{'_directory_'};
+	chdir $directory;
 
 	# run command, then immediately restore directory
 	my $output_text = qx(@command);
@@ -119,7 +73,7 @@ sub ok_clicked {
 	$main->output->AppendText($output_text);
 
 	my $ret = Wx::MessageBox(
-		sprintf( Wx::gettext("%s apparently created. Do you want to open it now?"), $data->{_app_name_} ),
+		sprintf( Wx::gettext("%s apparently created. Do you want to open it now?"), $self->{_app_name_} ),
 		Wx::gettext('Done'),
 		Wx::wxYES_NO | Wx::wxCENTRE,
 		$main,
@@ -127,7 +81,7 @@ sub ok_clicked {
 	if ( $ret == Wx::wxYES ) {
 		require Padre::Plugin::Mojolicious::Util;
 		my $file = Padre::Plugin::Mojolicious::Util::find_file_from_output(
-			$data->{'_app_name_'},
+			$app_name,
 			$output_text
 		);
 		$file = Cwd::realpath($file); # avoid relative paths
@@ -144,38 +98,3 @@ sub ok_clicked {
 }
 
 1;
-
-__END__
-=pod
-
-=head1 NAME
-
-Padre::Plugin::Mojolicious::NewApp - A New Mojolicious Application for Padre
-
-=head1 VERSION
-
-version 0.05
-
-=head1 AUTHORS
-
-=over 4
-
-=item *
-
-Breno G. de Oliveira <garu@cpan.org>
-
-=item *
-
-Ahmad M. Zawawi <ahmad.zawawi@gmail.com>
-
-=back
-
-=head1 COPYRIGHT AND LICENSE
-
-This software is copyright (c) 2010 by Breno G. de Oliveira.
-
-This is free software; you can redistribute it and/or modify it under
-the same terms as the Perl 5 programming language system itself.
-
-=cut
-
